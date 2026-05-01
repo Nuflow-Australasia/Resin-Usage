@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resin Usage Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;900&display=swap" rel="stylesheet" />
+  <style>
+    /* Nuflow brand colours */
+    :root {
+      --nublue:    #252D64;
+      --nugreen:   #59a345;
+      --blueliner: #4dc7ec;
+      --nugrey:    #eceded;
+      --nupine:    #0a6242;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      background: var(--nugrey);
+      color: var(--nublue);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .calc-header { margin-bottom: 1.75rem; }
+    .calc-header h1 {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--nublue);
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+    .calc-header p {
+      font-size: 13px;
+      color: #5a6070;
+    }
+
+    /* Layout */
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 560px) {
+      .calc-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: #ffffff;
+      border: 0.5px solid rgba(37,45,100,0.15);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .card-title {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--nugreen);
+      margin-bottom: 1rem;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--nublue);
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
+    }
+    .field input, .field select {
+      width: 100%;
+      height: 38px;
+      padding: 0 10px;
+      font-size: 14px;
+      font-family: 'Montserrat', Arial, sans-serif;
+      color: var(--nublue);
+      background: #ffffff;
+      border: 1.5px solid rgba(37,45,100,0.2);
+      border-radius: 8px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23252D64' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+      cursor: pointer;
+    }
+    .field input:hover, .field select:hover { border-color: var(--nugreen); }
+    .field input:focus, .field select:focus {
+      border-color: var(--nugreen);
+      box-shadow: 0 0 0 3px rgba(89,163,69,0.18);
+    }
+
+    /* Results */
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .metric {
+      background: var(--nugrey);
+      border-radius: 8px;
+      padding: 0.875rem 1rem;
+    }
+    .metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #5a6070;
+      margin-bottom: 4px;
+    }
+    .metric-value {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--nublue);
+      line-height: 1.2;
+    }
+    .metric-unit {
+      font-size: 13px;
+      font-weight: 400;
+      color: #5a6070;
+    }
+    .metric-full { grid-column: 1 / -1; }
+    .metric-accent {
+      background: var(--nublue);
+    }
+    .metric-accent .metric-label { color: var(--blueliner); }
+    .metric-accent .metric-value { color: #ffffff; }
+    .metric-accent .metric-unit  { color: rgba(255,255,255,0.6); }
+
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(37,45,100,0.1);
+      margin: 14px 0;
+    }
+
+    .placeholder {
+      color: #9aa0b0;
+      font-size: 13px;
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    /* Reference table */
+    .ref-table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    .ref-table th {
+      font-weight: 700;
+      color: var(--nublue);
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1.5px solid rgba(37,45,100,0.15);
+    }
+    .ref-table td {
+      padding: 6px 8px;
+      color: #3a4060;
+      border-bottom: 0.5px solid rgba(37,45,100,0.08);
+    }
+    .ref-table tr:last-child td { border-bottom: none; }
+    .ref-table tr.active-row td { color: var(--nugreen); font-weight: 700; }
+
+    .toggle-ref {
+      font-size: 12px;
+      font-family: 'Montserrat', Arial, sans-serif;
+      font-weight: 600;
+      color: var(--nugreen);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 12px;
+      text-decoration: underline;
+      display: block;
+    }
+    #ref-section { display: none; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="calc-header">
+      <h1>Resin usage calculator</h1>
+      <p>Calculate total resin, mix ratios, and calibration settings for CIPP liner installations.</p>
+    </div>
+
+    <div class="calc-grid">
+      <div class="card">
+        <p class="card-title">Inputs</p>
+
+        <div class="field">
+          <label for="pipeSize">Pipe size (mm)</label>
+          <input type="number" id="pipeSize" value="100" min="0" step="1" />
+        </div>
+
+        <div class="field">
+          <label for="linerLength">Liner length (m)</label>
+          <input type="number" id="linerLength" value="1" min="0" step="0.1" />
+        </div>
+
+        <div class="field">
+          <label for="resinType">Resin type</label>
+          <select id="resinType">
+            <option value="">— select —</option>
+            <option value="Ultra Fast">Ultra Fast</option>
+            <option value="Standard Fast">Standard Fast</option>
+            <option value="Standard Normal">Standard Normal</option>
+            <option value="Standard Slow">Standard Slow</option>
+            <option value="Underwater Fast">Underwater Fast</option>
+            <option value="Underwater Normal">Underwater Normal</option>
+            <option value="Underwater Slow">Underwater Slow</option>
+            <option value="HTAR Normal">HTAR Normal</option>
+            <option value="HTAR Slow">HTAR Slow</option>
+            <option value="Potable Normal">Potable Normal</option>
+            <option value="Potable Slow">Potable Slow</option>
+            <option value="Delayed Cure">Delayed Cure</option>
+            <option value="Latent Cure">Latent Cure</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="linerType">Liner type</label>
+          <select id="linerType">
+            <option value="">— select —</option>
+            <option value="Blueline Standard (4mm)">Blueline Standard (4mm)</option>
+            <option value="Blueline X 626 (4mm)">Blueline X 626 (4mm)</option>
+            <option value="Blueline X 323 (2mm)">Blueline X 323 (2mm)</option>
+            <option value="Sumo X (4.5mm)">Sumo X (4.5mm)</option>
+            <option value="Sumo XL (7.5mm)">Sumo XL (7.5mm)</option>
+            <option value="Sumo XXL (11mm)">Sumo XXL (11mm)</option>
+            <option value="Hybrid X (4.5mm)">Hybrid X (4.5mm)</option>
+            <option value="Hybrid XL (7.5mm)">Hybrid XL (7.5mm)</option>
+            <option value="Hybrid XXL (11mm)">Hybrid XXL (11mm)</option>
+            <option value="Super Flex (3mm)">Super Flex (3mm)</option>
+            <option value="WOVO X (3mm)">WOVO X (3mm)</option>
+            <option value="WOVO Glass (3.5mm)">WOVO Glass (3.5mm)</option>
+          </select>
+        </div>
+
+        <button class="toggle-ref" onclick="toggleRef()">Show resin reference table</button>
+        <div id="ref-section">
+          <table class="ref-table" id="refTable">
+            <thead>
+              <tr>
+                <th>Resin type</th>
+                <th>Liner type</th>
+                <th>Resin / 100mm / m</th>
+                <th>Mix ratio</th>
+                <th>Roller gap</th>
+              </tr>
+            </thead>
+            <tbody id="refBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Results</p>
+        <div id="results">
+          <div class="placeholder">Select a resin type and liner type to calculate.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const linerData = {
+      'Blueline Standard (4mm)':  { per100: 1.5,  per1mm: 0.015,  gap: '7mm – 7.5mm' },
+      'Blueline X 626 (4mm)':     { per100: 0.9,  per1mm: 0.009,  gap: '5.5mm – 6mm' },
+      'Blueline X 323 (2mm)':     { per100: 0.4,  per1mm: 0.004,  gap: '3mm – 3.5mm' },
+      'Sumo X (4.5mm)':           { per100: 1.25, per1mm: 0.0125, gap: '10mm – 11mm' },
+      'Sumo XL (7.5mm)':          { per100: 2.5,  per1mm: 0.025,  gap: '16mm – 17mm' },
+      'Sumo XXL (11mm)':          { per100: 3.75, per1mm: 0.0375, gap: '23mm – 24mm' },
+      'Hybrid X (4.5mm)':         { per100: 1.25, per1mm: 0.0125, gap: '10mm – 11mm' },
+      'Hybrid XL (7.5mm)':        { per100: 2.5,  per1mm: 0.025,  gap: '16mm – 17mm' },
+      'Hybrid XXL (11mm)':        { per100: 3.75, per1mm: 0.0375, gap: '23mm – 24mm' },
+      'Super Flex (3mm)':         { per100: 0.9,  per1mm: 0.009,  gap: '8mm' },
+      'WOVO X (3mm)':             { per100: 1.06, per1mm: 0.0106, gap: '7.5mm – 9mm' },
+      'WOVO Glass (3.5mm)':       { per100: 1.06, per1mm: 0.0106, gap: '9mm' }
+    };
+
+    const resinMix = {
+      'Ultra Fast':      { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Standard Fast':   { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Standard Normal': { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Standard Slow':   { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Underwater Fast': { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Underwater Normal':{ ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Underwater Slow': { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'HTAR Normal':     { ratio: '5:1', a: t => (t/6)*5, b: t => t/6 },
+      'HTAR Slow':       { ratio: '4:1', a: t => (t/5)*4, b: t => t/5 },
+      'Potable Normal':  { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Potable Slow':    { ratio: '2:1', a: t => (t/3)*2, b: t => t/3 },
+      'Delayed Cure':    { ratio: '4:1', a: t => (t/5)*4, b: t => t/5 },
+      'Latent Cure':     { ratio: '10:1', a: t => (t/11)*10, b: t => t/11 }
+    };
+
+    const refRows = [
+      ['Ultra Fast',       'Blueline Standard (4mm)',  1.50, '2:1',  '7mm – 7.5mm'],
+      ['Standard Fast',    'Blueline X 626 (4mm)',     0.90, '2:1',  '5.5mm – 6mm'],
+      ['Standard Normal',  'Blueline X 323 (2mm)',     0.40, '2:1',  '3mm – 3.5mm'],
+      ['Standard Slow',    'Sumo X (4.5mm)',           1.25, '2:1',  '10mm – 11mm'],
+      ['Underwater Fast',  'Sumo XL (7.5mm)',          2.50, '2:1',  '16mm – 17mm'],
+      ['Underwater Normal','Sumo XXL (11mm)',           3.75, '2:1',  '23mm – 24mm'],
+      ['Underwater Slow',  'Hybrid X (4.5mm)',         1.25, '2:1',  '10mm – 11mm'],
+      ['HTAR Normal',      'Hybrid XL (7.5mm)',        2.50, '5:1',  '16mm – 17mm'],
+      ['HTAR Slow',        'Hybrid XXL (11mm)',        3.75, '4:1',  '23mm – 24mm'],
+      ['Potable Normal',   'Super Flex (3mm)',         0.90, '2:1',  '8mm'],
+      ['Potable Slow',     'WOVO X (3mm)',             1.06, '2:1',  '7.5mm – 9mm'],
+      ['Delayed Cure',     'WOVO Glass (3.5mm)',       1.06, '4:1',  '9mm'],
+      ['Latent Cure',      '—',                        '—',  '10:1', '—']
+    ];
+
+    function buildRefTable() {
+      const tbody = document.getElementById('refBody');
+      const currentResin = document.getElementById('resinType').value;
+      const currentLiner = document.getElementById('linerType').value;
+      tbody.innerHTML = refRows.map(r => {
+        const isActive = r[0] === currentResin || r[1] === currentLiner;
+        return `<tr class="${isActive ? 'active-row' : ''}">
+          <td>${r[0]}</td>
+          <td>${r[1]}</td>
+          <td>${typeof r[2] === 'number' ? r[2].toFixed(2) : r[2]}</td>
+          <td>${r[3]}</td>
+          <td>${r[4]}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function toggleRef() {
+      const sec = document.getElementById('ref-section');
+      const btn = document.querySelector('.toggle-ref');
+      if (sec.style.display === 'block') {
+        sec.style.display = 'none';
+        btn.textContent = 'Show resin reference table';
+      } else {
+        sec.style.display = 'block';
+        btn.textContent = 'Hide resin reference table';
+        buildRefTable();
+      }
+    }
+
+    function fmt(n, decimals) {
+      return Number(n.toFixed(decimals));
+    }
+
+    function calculate() {
+      const pipeSize    = parseFloat(document.getElementById('pipeSize').value)    || 0;
+      const linerLength = parseFloat(document.getElementById('linerLength').value) || 0;
+      const resinType   = document.getElementById('resinType').value;
+      const linerType   = document.getElementById('linerType').value;
+      const results     = document.getElementById('results');
+
+      if (!resinType && !linerType) {
+        results.innerHTML = '<div class="placeholder">Select a resin type and liner type to calculate.</div>';
+        return;
+      }
+
+      const liner = linerData[linerType];
+      const resin = resinMix[resinType];
+
+      const totalResin  = liner ? pipeSize * linerLength * liner.per1mm : null;
+      const mixRatio    = resin ? resin.ratio : null;
+      const partA       = (totalResin !== null && resin) ? resin.a(totalResin) : null;
+      const partB       = (totalResin !== null && resin) ? resin.b(totalResin) : null;
+      const rollerGap   = liner ? liner.gap    : null;
+      const resinPer1mm = liner ? liner.per1mm : null;
+
+      let html = '<div class="results-grid">';
+
+      if (totalResin !== null) {
+        html += `<div class="metric metric-accent metric-full">
+          <p class="metric-label">Total resin</p>
+          <p class="metric-value">${fmt(totalResin, 3)} <span class="metric-unit">kg</span></p>
+        </div>`;
+      }
+
+      if (partA !== null) {
+        html += `<div class="metric">
+          <p class="metric-label">Part A</p>
+          <p class="metric-value">${fmt(partA, 3)} <span class="metric-unit">kg</span></p>
+        </div>`;
+      }
+
+      if (partB !== null) {
+        html += `<div class="metric">
+          <p class="metric-label">Part B</p>
+          <p class="metric-value">${fmt(partB, 3)} <span class="metric-unit">kg</span></p>
+        </div>`;
+      }
+
+      if (mixRatio) {
+        html += `<div class="metric">
+          <p class="metric-label">Mix ratio</p>
+          <p class="metric-value">${mixRatio}</p>
+        </div>`;
+      }
+
+      if (resinPer1mm !== null) {
+        html += `<div class="metric">
+          <p class="metric-label">Resin per 1mm / m</p>
+          <p class="metric-value">${resinPer1mm} <span class="metric-unit">kg</span></p>
+        </div>`;
+      }
+
+      html += '</div>';
+
+      if (rollerGap) {
+        html += `<hr class="divider" />
+        <div class="metric">
+          <p class="metric-label">Calibration roller gap</p>
+          <p class="metric-value" style="font-size:18px">${rollerGap}</p>
+        </div>`;
+      }
+
+      results.innerHTML = html;
+
+      if (document.getElementById('ref-section').style.display === 'block') buildRefTable();
+    }
+
+    ['pipeSize', 'linerLength', 'resinType', 'linerType'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calculate);
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
